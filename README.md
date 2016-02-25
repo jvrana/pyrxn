@@ -30,9 +30,11 @@ a pandas dataframe, ready for plotting.
     df = c.run(0.01, 100) # Run with step_size of 0.01 to a final time of 100
 
 You can perform a dose response.
+
     dose = 10**np.linspace(-3, 2, 50)
-    c.dose_response("C", dose, 0.01, 100) # dose response on C from 1e-3 to 1e2 with step_size 0.01 to a final time of 100 each run
-    
+    c.dose_response("C", dose, 0.01, 100).plot() # dose response on C from 1e-3 to 1e2 with step_size 0.01 to a final time of 100 each run
+
+<h3> Three Ring Oscillator </h3>
 Heres an example of a three ring oscillator with dampening oscillations:
 
     c = CRN()
@@ -47,3 +49,42 @@ Heres an example of a three ring oscillator with dampening oscillations:
     c.r("C > ", 0.1)
     c.initialize({"PA": 1, "PB": 1, "PC": 1})
     c.run(0.01, 1000).plot()
+	
+![alt tag](https://raw.githubusercontent.com/jvrana/pyrxn/develop/three_ring_oscillator_dampening.png)
+
+An example of the output:
+
+![alt tag](https://raw.githubusercontent.com/jvrana/pyrxn/develop/OutputExample.png)
+
+<h3> Ultrasensitive Enzymatic Reaction Example </h3>
+
+Next we explore the effect of a competitive inhibitor on a kinase reaction. You can see a clear shift in the response to kinase concentration in the prescence of a strong inhibitor. Increasing the inhibitor concentration will shift the 'threshold' or the inflection point of the curve. Increasing inhibitor strength will result in steeper inflection points and a more ultrasensitive response.
+        
+        # building the CRN
+        c = CRN()
+        c.r("X + K > XP + K", 1)
+        c.r("XP > X", 0.1)
+        c.r("K + I <> KI", 10, 0.01)
+        
+        kinase_values = np.linspace(0.001, 2.0, 100)
+        c.initialize({"X":1, "XP":1 , "K":0, "I":0})
+        d = c.dose_response("K", kinase_values, 0.01, 100)
+        c.initialize({"X":1, "XP":1 , "K":0, "I":1})
+        d2 = c.dose_response("K", kinase_values, 0.01, 100)
+        
+        # plotting
+        plt.figure(1)
+        plt.plot(d.index,d['X'], label='X (+I)')
+        plt.hold(True)
+        plt.plot(d.index,d['XP'], label='XP (+I)')
+        plt.plot(d2.index,d2['X'], label='X (-I)')
+        plt.plot(d2.index,d2['XP'], label='XP (-I)')
+        plt.title("Ultrasensitive Kinase Reaction")
+        plt.xlabel("Kinase Concentration",fontsize='larger')
+        plt.ylabel("Concentration",fontsize='larger')
+        plt.yticks(fontsize='larger',va='bottom')
+        plt.xticks(fontsize='larger')
+        plt.legend()
+        plt.show()
+        
+![alt tag](https://raw.githubusercontent.com/jvrana/pyrxn/develop/ultrasensitive_enzymatic_reaction.png)
