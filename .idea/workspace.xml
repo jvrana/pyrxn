@@ -31,7 +31,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="OutputExample.png" pinned="false" current-in-tab="true">
+      <file leaf-file-name="OutputExample.png" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/OutputExample.png">
           <provider selected="true" editor-type-id="images">
             <state />
@@ -60,11 +60,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CRN.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="CRN.py" pinned="false" current-in-tab="true">
         <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.5759717">
+              <caret line="108" column="50" selection-start-line="108" selection-start-column="49" selection-end-line="108" selection-end-column="50" />
               <folding>
                 <element signature="e#75#105#0" expanded="true" />
               </folding>
@@ -81,6 +81,7 @@
         <option value="$USER_HOME$/Documents/Programming/CRN_Builder/pyrxn/__init__.py" />
         <option value="$USER_HOME$/Documents/Programming/CRN_Builder/pyrxn/CRN.py" />
         <option value="$USER_HOME$/Documents/Programming/CRN_Builder/setup.py" />
+        <option value="$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py" />
       </list>
     </option>
   </component>
@@ -342,16 +343,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-          <folding>
-            <element signature="e#75#105#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/setup.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -363,6 +354,16 @@
     <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/OutputExample.png">
       <provider selected="true" editor-type-id="images">
         <state />
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.5759717">
+          <caret line="108" column="50" selection-start-line="108" selection-start-column="49" selection-end-line="108" selection-end-column="50" />
+          <folding>
+            <element signature="e#75#105#0" expanded="true" />
+          </folding>
+        </state>
       </provider>
     </entry>
   </component>

@@ -82,7 +82,7 @@ class CRN:
 
     def dX(self):
         self.get_rxn_flux_vector()
-        return np.dot(self.reaction_flux_vector, c.product_matrix - c.reactant_matrix)
+        return np.dot(self.reaction_flux_vector, self.product_matrix - self.reactant_matrix)
 
     def _get_index(self, element):
         return list(self.elements).index(element)
@@ -93,7 +93,7 @@ class CRN:
 
         def func(y, t):
             flux_vector = self.apply_flux_vector(y)
-            dx = np.dot(flux_vector, c.product_matrix - c.reactant_matrix)
+            dx = np.dot(flux_vector, self.product_matrix - self.reactant_matrix)
             return dx
 
         y0 = init
@@ -106,7 +106,7 @@ class CRN:
         return y
 
     def dose_response(self, element, values, dt, t_final):
-        index = list(c.elements).index(element)
+        index = list(self.elements).index(element)
         array = []
         for i in values:
             init_copy = self.init.copy()
