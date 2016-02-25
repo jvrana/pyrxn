@@ -16,7 +16,7 @@ config = {
     'download_url': '',
     'author_email': 'justin.vrana@gmail.com',
     'version': '0.0.1',
-    'install_requires': ['pandas', 'numpy', 'scipy'],
+    #'install_requires': ['pandas', 'numpy', 'scipy'],
     'packages': ['pyrxn'],
     'scripts': [],
     'name': 'pyrxn',

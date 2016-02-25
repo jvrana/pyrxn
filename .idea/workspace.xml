@@ -21,11 +21,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="setup.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="setup.py" pinned="false" current-in-tab="true">
         <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="1" column="5" selection-start-line="1" selection-start-column="5" selection-end-line="1" selection-end-column="5" />
+            <state vertical-scroll-proportion="0.45531198">
+              <caret line="18" column="5" selection-start-line="18" selection-start-column="5" selection-end-line="18" selection-end-column="5" />
               <folding />
             </state>
           </provider>
@@ -60,11 +60,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CRN.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="CRN.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5759717">
-              <caret line="108" column="50" selection-start-line="108" selection-start-column="49" selection-end-line="108" selection-end-column="50" />
+            <state vertical-scroll-proportion="-9.851851">
+              <caret line="104" column="29" selection-start-line="104" selection-start-column="29" selection-end-line="104" selection-end-column="29" />
               <folding>
                 <element signature="e#75#105#0" expanded="true" />
               </folding>
@@ -82,6 +82,7 @@
         <option value="$USER_HOME$/Documents/Programming/CRN_Builder/pyrxn/CRN.py" />
         <option value="$USER_HOME$/Documents/Programming/CRN_Builder/setup.py" />
         <option value="$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py" />
+        <option value="$USER_HOME$/Documents/Programming/pyrxn/setup.py" />
       </list>
     </option>
   </component>
@@ -343,14 +344,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1" column="5" selection-start-line="1" selection-start-column="5" selection-end-line="1" selection-end-column="5" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/OutputExample.png">
       <provider selected="true" editor-type-id="images">
         <state />
@@ -358,11 +351,19 @@
     </entry>
     <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/pyrxn/CRN.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5759717">
-          <caret line="108" column="50" selection-start-line="108" selection-start-column="49" selection-end-line="108" selection-end-column="50" />
+        <state vertical-scroll-proportion="-9.851851">
+          <caret line="104" column="29" selection-start-line="104" selection-start-column="29" selection-end-line="104" selection-end-column="29" />
           <folding>
             <element signature="e#75#105#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Programming/pyrxn/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.45531198">
+          <caret line="18" column="5" selection-start-line="18" selection-start-column="5" selection-end-line="18" selection-end-column="5" />
+          <folding />
         </state>
       </provider>
     </entry>
