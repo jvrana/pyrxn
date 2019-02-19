@@ -809,4 +809,4 @@ local.properties
 .scala_dependencies
 .worksheet
 
-.pytest_cache/*/**
+.pytest_cache
