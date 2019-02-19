@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import re
 import itertools
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 from collections import defaultdict
 from copy import copy
 
@@ -174,33 +174,102 @@ class CRN:
 
     @property
     def R(self):
+        """
+        The reactant component of the stoichiometry matrix. A m x n matrix where m is the
+        number of elements and n is the number of reactions.
+
+        :return:
+        :rtype:
+        """
         return self._reactant_matrix
 
     @property
     def P(self):
+        """
+        The product component of the stoichiometry matrix. A m x n matrix where m is the
+        number of elements and n is the number of reactions.
+
+        :return:
+        :rtype:
+        """
         return self._product_matrix
 
     @property
     def N(self):
+        """
+        The stoichiometry matrix. A m x n matrix where m is the
+        number of elements and n is the number of reactions.
+
+        :return:
+        :rtype:
+        """
         return self.P - self.R
 
     @property
     def E(self):
+        """
+        Returns list of elements in the CRN
+
+        :return:
+        :rtype:
+        """
+        return list(self._elements)
+
+    @property
+    def elements(self):
         return list(self._elements)
 
     @property
     def x(self):
+        """
+        Current concentrations in the CRN. Indices correspond to the indices in the elements.
+
+        :return:
+        :rtype:
+        """
         return self._x
 
     @property
     def init(self):
-        return self._init
+        """
+        Initial concentrations of the CRN at time `initialize` was called.
 
-    def get(self, matrix, element):
-        index = self.E.index(element)
+        :return:
+        :rtype:
+        """
+        return self._init.copy()
+
+    def __getitem__(self, element):
+        """
+        Gets the concentration of the element from the state matrix.
+
+        :param element: element
+        :type element: str
+        :return: concentration
+        :rtype: float
+        """
+        return self.get(self.x, element)
+
+    def get(self, matrix, element, default=None):
+        """
+        Gets the concetration of element from a matrix.
+
+        :param matrix:
+        :type matrix:
+        :param element:
+        :type element:
+        :return:
+        :rtype:
+        """
+        try:
+            index = self.E.index(element)
+        except ValueError:
+            return default
         return matrix[index, 0]
 
-    def v(self, x):
+    def v(self, x=None):
+        if x is not None:
+            x = self.x
         vmatrix = np.zeros((len(self.reactions), 1))
         for i, r in enumerate(self.reactions):
             val = r.rate
@@ -224,60 +293,46 @@ class CRN:
             self._x[i, 0] = v
         self._init = self._x.copy()
 
-    def get_rxn_flux_vector(self):
+    def dX(self):
         """
-        Returns the reaction flux vector
+        Compute the instantaneous rate.
 
-        :return: reaction flux vector
-        :rtype: np.array
-        """
-        rxn_flux = []
-        for j, reaction in enumerate(self.reactions):
-            rate = 1
-            for i, element in enumerate(self.elements):
-                stoich_ele_i = reaction.reactant_elements[element]
-                rate = rate * self.state[i]**stoich_ele_i
-            rxn_flux.append(rate*reaction.rate_constant)
-        self.reaction_flux_vector = np.array(rxn_flux)
-        return self.reaction_flux_vector
-
-    def apply_flux_vector(self, state):
-        """
-        Get the instantan
-        :param state:
-        :type state:
         :return:
         :rtype:
         """
-        rxn_flux = []
-        for j, reaction in enumerate(self.reactions):
-            rate = 1
-            for i, element in enumerate(self.elements):
-                stoich_ele_i = reaction.reactant_elements[element]
-                rate = rate * state[i]**stoich_ele_i
-            rxn_flux.append(rate*reaction.rate_constant)
-        return np.array(rxn_flux)
-
-    def dX(self):
         self.get_rxn_flux_vector()
-        return np.dot(self.N, self.v(self.x))
+        return np.dot(self.N, self.v())
 
-    def run(self, dt, t_final, init=None):
-        if init is None:
-            init = self.init.copy()
-
-        def func(y, t):
+    def solve(self, t_final, t_init=0, init=None):
+        def func(t, y):
             return np.dot(self.N, self.v(y.reshape(len(y), 1))).flatten()
+        if init is not None:
+            init = np.zeros(len(self.E))
+        sol = solve_ivp(func, [t_init, t_final], init)
+        return sol
 
-        y0 = init.flatten()
-        t = np.linspace(0, t_final, t_final/dt)
-        y = odeint(func, y0, t)
+    def run(self, t_final, t_init=0, init=None):
+        """
+        Run ode.
 
-        y = pd.DataFrame(y)
-        y.index = y.index * dt
-        y.columns = self._elements
-        y.index.name = 'time'
-        return y
+        :param dt:
+        :type dt:
+        :param t_final:
+        :type t_final:
+        :param init:
+        :type init:
+        :return:
+        :rtype:
+        """
+        init_vector = self.init.copy()
+        if init:
+            for k, v in init.items():
+                i = self.E.index(k)
+                init_vector[i, 0] = v
+        sol = self.solve(t_final, t_init, init_vector.flatten())
+        df = pd.DataFrame(sol.y.T, columns=self.E)
+        df['time'] = sol.t
+        return df
 
     def __add__(self, other):
         c = self.__class__()

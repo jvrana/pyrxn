@@ -105,7 +105,7 @@ def test_run():
 
     c.initialize({"P1": 1})
 
-    df = c.run(1, 750)
+    df = c.run(750)
     df['time'] = df.index
 
     gradient(df, 'time', 1)
