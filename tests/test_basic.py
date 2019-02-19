@@ -103,10 +103,9 @@ def test_run():
     c.r("m1 > ", 0.01)
     c.r("P1 + m2 <> PR1", [0.001, 0.001])
 
-    c.initialize({"P1": 1})
+    c.set_state({"P1": 1})
 
     df = c.run(750)
-    df['time'] = df.index
 
     gradient(df, 'time', 1)
     gradient(df, 'time', 2)

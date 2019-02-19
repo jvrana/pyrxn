@@ -17,25 +17,89 @@ from copy import copy
 
 
 class Reaction:
-    def __init__(self, reactants, products, rate_constant, name=''):
+    def __init__(self, reactants: dict, products: dict, rate_constant: float, name=''):
         """Construct a new reaction"""
         self._elements = list()
-        self._relements = defaultdict(int)
-        self._pelements = defaultdict(int)
-        self.rate = rate_constant
+        self._relements = reactants
+        self._pelements = products
+        self.rate = float(rate_constant)
         self.name = name
 
-        for r in reactants:
-            s, e = self._convert_element(r)
-            self._relements[e] = s
+        for e in reactants:
+            self._relements = dict(reactants)
             if e not in self._elements:
                 self._elements.append(e)
-        for p in products:
-            s, e = self._convert_element(p)
-            self._pelements[e] = s
+        for e in products:
+            self._pelements = dict(products)
             if e not in self._elements:
                 self._elements.append(e)
         sorted(self._elements)
+
+    @classmethod
+    def from_element_list(cls, reactants, products, rate_contant, name=''):
+        """
+        Construct reaction from a list of reactants and products.
+
+        :param reactants: e.g ["1A", "2B"]
+        :type reactants: str
+        :param products: e.g ["1A", "2B"]
+        :type products: str
+        :param rate_contant: rate constant for this reaction
+        :type rate_contant: float
+        :param name: optional name of reaction
+        :type name: str
+        :return: new reaction
+        :rtype: Reaction
+        """
+        rcoeff = dict()
+        pcoeff = dict()
+        for r in reactants:
+            s, e = cls._convert_element(r)
+            rcoeff[e] = s
+        for p in products:
+            s, e = cls._convert_element(p)
+            pcoeff[e] = s
+        return cls(rcoeff, pcoeff, rate_contant, name)
+
+    @classmethod
+    def from_string(cls, eqn, rate):
+        """
+        Construct reactions from unidirectional or bidirectional reactions.
+
+        :param eqn: e.g. " A + B <> 2C"
+        :type eqn: string
+        :param rate: rate constant(s). Tuple must be provided if bidirectional reaction.
+        :type rate: list or float
+        :return:
+        :rtype:
+        """
+        reactants, direction, products = re.split("\s*([<>=]+)\s*", eqn)
+        reactants = re.split("\s*\+\s*", reactants)
+        products = re.split("\s*\+\s*", products)
+        reactions = []
+        while '' in reactants:
+            reactants.remove('')
+        while '' in products:
+            products.remove('')
+        if direction in ["<", ">"]:
+            if not (isinstance(rate, int) or isinstance(rate, float)):
+                raise CRNException("Rate must by a number for directional reactions. Instead found a {}".format(type(rate)))
+            elif rate == 0:
+                    raise CRNException("Rate cannot be zero.")
+            if direction == ">":
+                reactions.append(cls.from_element_list(reactants, products, rate))
+            else:
+                reactions.append(cls.from_element_list(products, reactants, rate))
+        elif direction == "<>" or direction == "=":
+            if not (isinstance(rate, list) or isinstance(rate, tuple)):
+                raise CRNException("Bidirectional reactions include a list or tuple of rates.")
+            elif 0 in rate:
+                raise CRNException("Rate cannot be zero. {}".format(rate))
+            reactions.append(cls.from_element_list(reactants, products, rate[0]))
+            reactions.append(cls.from_element_list(products, reactants, rate[1]))
+        else:
+            raise CRNException("Direction {} not recognized".format(direction))
+        return reactions
 
     @property
     def elements(self):
@@ -52,7 +116,8 @@ class Reaction:
         """List of all products"""
         return copy(self._pelements)
 
-    def _convert_element(self, e):
+    @staticmethod
+    def _convert_element(e):
         g = re.match("(?P<stoich>\d?)(?P<ele>[a-zA-Z0-9\*:]+)", e)
         stoich = g.group('stoich')
         if stoich == '':
@@ -96,13 +161,15 @@ class Reaction:
         return s
 
 class CRN:
-    def __init__(self):
+    def __init__(self, reactions=None):
         self._reactions = []
         self._reactant_matrix = None
         self._product_matrix = None
-        self._elements = None
+        self._elements = list()
         self._x = None
-        self._init = None
+        if reactions:
+            for r in reactions:
+                self.r(r)
 
     @property
     def reactions(self):
@@ -111,11 +178,28 @@ class CRN:
     def _add_reaction(self, reaction):
         self._reactions.append(reaction)
 
+    def add_reactions(self, reactions):
+        """
+        Add reactions from a list of Reactions
+
+        :param reactions: list of Reactions
+        :type reactions: list
+        :return:
+        :rtype:
+        """
+        elements = self._elements[:]
+        for r in reactions:
+            print(r)
+            self._add_reaction(r)
+            elements += r.elements
+        self._elements = sorted(elements)
+        self._stoich()
+        self.set_state()
+        return self
+
     def r(self, eqn, rate):
         """
         Adds a new reaction from a string similar to the form `3A + 4B + 2D <> C`
-
-        Direction: ['<', '>', '<>']
 
         :param eqn: reaction string
         :type eqn: basestring
@@ -124,49 +208,25 @@ class CRN:
         :return: None
         :rtype: None
         """
-        reactants, direction, products = re.split("\s*([<>=]+)\s*", eqn)
-        reactants = re.split("\s*\+\s*", reactants)
-        products = re.split("\s*\+\s*", products)
-        while '' in reactants:
-            reactants.remove('')
-        while '' in products:
-            products.remove('')
-        if direction in ["<", ">"]:
-            if not (isinstance(rate, int) or isinstance(rate, float)):
-                raise CRNException("Rate must by a number for directional reactions. Instead found a {}".format(type(rate)))
-            elif rate == 0:
-                    raise CRNException("Rate cannot be zero.")
-            if direction == ">":
-                self._add_reaction(Reaction(reactants, products, rate))
-            else:
-                self._add_reaction(Reaction(products, reactants, rate))
-        elif direction == "<>" or direction == "=":
-            if not (isinstance(rate, list) or isinstance(rate, tuple)):
-                raise CRNException("Bidirectional reactions include a list or tuple of rates.")
-            elif 0 in rate:
-                raise CRNException("Rate cannot be zero. {}".format(rate))
-            self._add_reaction(Reaction(reactants, products, rate[0]))
-            self._add_reaction(Reaction(products, reactants, rate[1]))
-        else:
-            raise CRNException("Direction {} not recognized".format(direction))
-        self._stoich()
-
-    def _all_elements(self):
-        elements = [r.elements for r in self.reactions]
-        elements = list(set(itertools.chain(*elements)))
-        elements.sort()
-        return elements
+        return self.add_reactions(Reaction.from_string(eqn, rate))
 
     def _stoich(self):
-        elements = self._all_elements()
+        """
+        Initialize the stoichiometry matrix
+
+        :return:
+        :rtype:
+        """
+        elements = self.elements
         stoich_matrix = np.zeros((len(elements), len(self.reactions)))
         reactant_matrix = stoich_matrix.copy()
         product_matrix = stoich_matrix.copy()
+        print(elements)
         for i, e in enumerate(elements):
             for j, r in enumerate(self.reactions):
-                reactant_matrix[i,j] = r.reactants[e]
-                product_matrix[i,j] = r.products[e]
-                stoich_matrix[i,j] = r.products[e] - r.reactants[e]
+                reactant_matrix[i,j] = r.reactants.get(e, 0.0)
+                product_matrix[i,j] = r.products.get(e, 0.0)
+                stoich_matrix[i,j] = r.products.get(e, 0.0) - r.reactants.get(e, 0.0)
         self._reactant_matrix = np.array(reactant_matrix)
         self._product_matrix = np.array(product_matrix)
         self._elements = elements
@@ -229,16 +289,6 @@ class CRN:
         """
         return self._x
 
-    @property
-    def init(self):
-        """
-        Initial concentrations of the CRN at time `initialize` was called.
-
-        :return:
-        :rtype:
-        """
-        return self._init.copy()
-
     def __getitem__(self, element):
         """
         Gets the concentration of the element from the state matrix.
@@ -248,9 +298,9 @@ class CRN:
         :return: concentration
         :rtype: float
         """
-        return self.get(self.x, element)
+        return self.get(element, self.x)
 
-    def get(self, matrix, element, default=None):
+    def get(self, element, matrix, default=None):
         """
         Gets the concetration of element from a matrix.
 
@@ -268,17 +318,17 @@ class CRN:
         return matrix[index, 0]
 
     def v(self, x=None):
-        if x is not None:
+        if x is None:
             x = self.x
         vmatrix = np.zeros((len(self.reactions), 1))
         for i, r in enumerate(self.reactions):
             val = r.rate
             for e in r.reactants:
-                val *= self.get(x, e)**r.reactants[e]
+                val *= self.get(e, x)**r.reactants[e]
             vmatrix[i, 0] = val
         return vmatrix
 
-    def initialize(self, init):
+    def set_state(self, init=None):
         """
         Initialize CRN with starting concentrations
 
@@ -288,32 +338,53 @@ class CRN:
         :rtype: None
         """
         self._x = np.zeros((len(self.E), 1))
-        for k, v in init.items():
-            i = self.E.index(k)
-            self._x[i, 0] = v
-        self._init = self._x.copy()
+        if init is not None:
+            self._x = self._state_matrix(init)
 
-    def dX(self):
+    def dX(self, x=None):
         """
         Compute the instantaneous rate.
 
         :return:
         :rtype:
         """
+        if x is None:
+            x = self.x
         self.get_rxn_flux_vector()
-        return np.dot(self.N, self.v())
+        return np.dot(self.N, self.v(x))
 
-    def solve(self, t_final, t_init=0, init=None):
+    def _state_matrix(self, init=None):
+        init_vector = self.x
+        size = len(self.E)
+        if isinstance(init, dict):
+            for k, v in init.items():
+                i = self.E.index(k)
+                init_vector[i, 0] = v
+        elif isinstance(init, list):
+            init_vector = np.array(init).reshape((size, 1))
+        elif isinstance(init, np.ndarray):
+            if init.ndim == 1:
+                init_vector = init
+                init_vector.reshape((size, 1))
+            elif init.ndim == 2:
+                init_vector = init
+        if len(init_vector) != size:
+            raise CRNException("Initialization vector size must be the same size as num elements ({})".format(size))
+        return init_vector
+
+    def solve(self, t_final, t_init=0, init=None, *args, **kwargs):
         def func(t, y):
             return np.dot(self.N, self.v(y.reshape(len(y), 1))).flatten()
-        if init is not None:
+
+        if init is None:
             init = np.zeros(len(self.E))
+        print(init)
         sol = solve_ivp(func, [t_init, t_final], init)
         return sol
 
-    def run(self, t_final, t_init=0, init=None):
+    def run(self, t_final, t_init=0, init=None, *args, **kwargs):
         """
-        Run ode.
+        Run ode using solve_ivp from scipy.integrate
 
         :param dt:
         :type dt:
@@ -324,12 +395,8 @@ class CRN:
         :return:
         :rtype:
         """
-        init_vector = self.init.copy()
-        if init:
-            for k, v in init.items():
-                i = self.E.index(k)
-                init_vector[i, 0] = v
-        sol = self.solve(t_final, t_init, init_vector.flatten())
+        init_vector = self._state_matrix(init).flatten()
+        sol = self.solve(t_final, t_init, init_vector, *args, **kwargs)
         df = pd.DataFrame(sol.y.T, columns=self.E)
         df['time'] = sol.t
         return df
@@ -341,20 +408,19 @@ class CRN:
         return c
 
     def __iadd__(self, other):
-        for r in other.reactions:
-            self._add_reaction(r.copy())
+        self.add_reactions(other.reactions)
         return self
 
-    def dose_response(self, element, values, dt, t_final):
-        index = list(self.elements).index(element)
-        array = []
-        for i in values:
-            init_copy = self.init.copy()
-            init_copy[index] = i
-            d = self.run(dt, t_final, init=init_copy)
-            array.append(d.iloc[-1])
-        array = pd.DataFrame(array)
-        array.index = values
-        array.index.name = "{}_T".format(element)
-        return array
+    # def dose_response(self, element, values, dt, t_final):
+    #     index = list(self.elements).index(element)
+    #     array = []
+    #     for i in values:
+    #         init_copy = self.init.copy()
+    #         init_copy[index] = i
+    #         d = self.run(dt, t_final, init=init_copy)
+    #         array.append(d.iloc[-1])
+    #     array = pd.DataFrame(array)
+    #     array.index = values
+    #     array.index.name = "{}_T".format(element)
+    #     return array
 
