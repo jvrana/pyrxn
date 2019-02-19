@@ -160,6 +160,7 @@ class Reaction:
         s = " + ".join(r) + " > " + " + ".join(p)
         return s
 
+
 class CRN:
     def __init__(self, reactions=None):
         self._reactions = []
@@ -189,7 +190,6 @@ class CRN:
         """
         elements = self._elements[:]
         for r in reactions:
-            print(r)
             self._add_reaction(r)
             elements += r.elements
         self._elements = sorted(elements)
@@ -221,7 +221,6 @@ class CRN:
         stoich_matrix = np.zeros((len(elements), len(self.reactions)))
         reactant_matrix = stoich_matrix.copy()
         product_matrix = stoich_matrix.copy()
-        print(elements)
         for i, e in enumerate(elements):
             for j, r in enumerate(self.reactions):
                 reactant_matrix[i,j] = r.reactants.get(e, 0.0)
@@ -378,8 +377,7 @@ class CRN:
 
         if init is None:
             init = np.zeros(len(self.E))
-        print(init)
-        sol = solve_ivp(func, [t_init, t_final], init)
+        sol = solve_ivp(func, [t_init, t_final], init, *args, **kwargs)
         return sol
 
     def run(self, t_final, t_init=0, init=None, *args, **kwargs):
