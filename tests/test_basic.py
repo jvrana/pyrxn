@@ -76,3 +76,16 @@ def test_copy_reaction():
     r2 = reaction.copy(1)
 
     print(r2)
+
+def test_magic_add():
+    c1 = CRN()
+    c1.r("2A + B > C", 1.0)
+
+    c2 = CRN()
+    c1.r("3A + B <> C", [1.0, 3.0])
+
+    c3 = c1 + c2
+    assert(len(c3.reactions) == 3)
+
+    for r in c3.reactions:
+        print(r)

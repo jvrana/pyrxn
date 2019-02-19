@@ -198,26 +198,16 @@ class CRN:
         y.index.name = 'time'
         return y
 
-    # def _get_index(self, element):
-    #     return list(self.elements).index(element)
-    #
-    # def run(self, dt, t_final, init=None):
-    #     if init is None:
-    #         init = self.init.copy()
-    #
-    #     def func(y, t):
-    #         flux_vector = self.apply_flux_vector(y)
-    #         dx = np.dot(flux_vector, self.product_matrix - self.reactant_matrix)
-    #         return dx
-    #
-    #     y0 = init
-    #     t = np.linspace(0,t_final,t_final/dt)
-    #     y = odeint(func, y0, t)
-    #     y = pd.DataFrame(y)
-    #     y.index = y.index * dt
-    #     y.columns = self.elements
-    #     y.index.name = 'time'
-    #     return y
+    def __add__(self, other):
+        c = self.__class__()
+        c += self
+        c += other
+        return c
+
+    def __iadd__(self, other):
+        for r in other.reactions:
+            self._add_reaction(r.copy())
+        return self
 
     def dose_response(self, element, values, dt, t_final):
         index = list(self.elements).index(element)
