@@ -2,12 +2,15 @@ from pyrxn import CRN
 from pyrxn.exceptions import CRNException
 import pytest
 import numpy as np
+from pyrxn.utilities import plot, gradient
+
 
 def test_basic():
     c = CRN()
     c.r("A + 2B <> C", [1.0, 2.0])
 
     assert(2 == len(c.reactions))
+
 
 def test_basic2():
     c = CRN()
@@ -50,6 +53,7 @@ def test_bidirectional(reactants, products, direction, rates, num_rxns):
             c.r(rxn, rates)
         assert(2*num_rxns == len(c.reactions))
 
+
 def test_N():
     c = CRN()
     c.r("A + 2B <> C", [1.0, 2.0])
@@ -77,6 +81,7 @@ def test_copy_reaction():
 
     print(r2)
 
+
 def test_magic_add():
     c1 = CRN()
     c1.r("2A + B > C", 1.0)
@@ -89,3 +94,24 @@ def test_magic_add():
 
     for r in c3.reactions:
         print(r)
+
+
+def test_run():
+    c = CRN()
+
+    c.r("P1 > m1 + P1", 0.01)
+    c.r("m1 > ", 0.01)
+    c.r("P1 + m2 <> PR1", [0.001, 0.001])
+
+    c.initialize({"P1": 1})
+
+    df = c.run(1, 750)
+    df['time'] = df.index
+
+    gradient(df, 'time', 1)
+    gradient(df, 'time', 2)
+
+    plot(df, 'time', c.E)
+
+
+

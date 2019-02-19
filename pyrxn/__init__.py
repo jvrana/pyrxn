@@ -1,1 +1,1 @@
-from pyrxn.CRN import CRN
+from pyrxn.crn import CRN

@@ -8,6 +8,7 @@ scipy = "*"
 numpy = "*"
 pandas = "*"
 sympy = "*"
+seaborn = "*"
 
 [dev-packages]
 pytest = "*"

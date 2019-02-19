@@ -1,3 +1,5 @@
+from pyrxn.utilities.plotting import plot, gradient
+
 def _op_dict(d1, d2, func):
     d3 = dict()
 
@@ -14,3 +16,4 @@ def sum_dicts(d1, d2):
 
 def subtract_dicts(d1, d2):
     return _op_dict(d1, d2, lambda a, b: a - b)
+
