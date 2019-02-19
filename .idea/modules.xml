@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$USER_HOME$/Documents/Programming/pyrxn/.idea/pyrxn.iml" filepath="$USER_HOME$/Documents/Programming/pyrxn/.idea/pyrxn.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/pyrxn.iml" filepath="$PROJECT_DIR$/.idea/pyrxn.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../Programming/pyrxn/.idea/pyrxn.iml" filepath="$PROJECT_DIR$/../../Programming/pyrxn/.idea/pyrxn.iml" />
     </modules>
   </component>
 </project>

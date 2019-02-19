@@ -6,8 +6,8 @@ A Chemical Reaction Network Builder
 
 '''
 
-from .Reaction import Reaction
-from collections import defaultdict
+from pyrxn.Reaction import Reaction
+from pyrxn.exceptions import CRNException
 import numpy as np
 import pandas as pd
 import re
@@ -16,51 +16,140 @@ from scipy.integrate import odeint
 
 class CRN:
     def __init__(self):
-        self.reactions = []
+        self._reactions = []
+        self._reactant_matrix = None
+        self._product_matrix = None
+        self._elements = None
+        self._x = None
+        self._init = None
 
-    def r(self, eqn, *rates):
-        ''' Adds reaction based on string format A + B <> C '''
-        reactants, direction, products = re.split("\s*([<>]+)\s*", eqn)
+    @property
+    def reactions(self):
+        return self._reactions[:]
+
+    def _add_reaction(self, reaction):
+        self._reactions.append(reaction)
+
+    def r(self, eqn, rate):
+        """
+        Adds a new reaction from a string similar to the form `3A + 4B + 2D <> C`
+
+        Direction: ['<', '>', '<>']
+
+        :param eqn: reaction string
+        :type eqn: basestring
+        :param rates: list of rates. If direction is '<>', there must be two rates.
+        :type rates: float
+        :return: None
+        :rtype: None
+        """
+        reactants, direction, products = re.split("\s*([<>=]+)\s*", eqn)
         reactants = re.split("\s*\+\s*", reactants)
         products = re.split("\s*\+\s*", products)
         while '' in reactants:
             reactants.remove('')
         while '' in products:
             products.remove('')
-        if re.match("[<>]+", direction) is not None:
-            if ">" in direction:
-                self.reactions.append(Reaction(reactants, products, rates[0]))
-            if "<" in direction:
-                self.reactions.append(Reaction(products, reactants, rates[1]))
+        if direction in ["<", ">"]:
+            if not (isinstance(rate, int) or isinstance(rate, float)):
+                raise CRNException("Rate must by a number for directional reactions. Instead found a {}".format(type(rate)))
+            elif rate == 0:
+                    raise CRNException("Rate cannot be zero.")
+            if direction == ">":
+                self._add_reaction(Reaction(reactants, products, rate))
+            else:
+                self._add_reaction(Reaction(products, reactants, rate))
+        elif direction == "<>" or direction == "=":
+            if not (isinstance(rate, list) or isinstance(rate, tuple)):
+                raise CRNException("Bidirectional reactions include a list or tuple of rates.")
+            elif 0 in rate:
+                raise CRNException("Rate cannot be zero. {}".format(rate))
+            self._add_reaction(Reaction(reactants, products, rate[0]))
+            self._add_reaction(Reaction(products, reactants, rate[1]))
         else:
-            print "direction not recognized"
+            raise CRNException("Direction {} not recognized".format(direction))
+        self._stoich()
+
+    def _all_elements(self):
+        elements = [r.elements for r in self.reactions]
+        elements = list(set(itertools.chain(*elements)))
+        elements.sort()
+        return elements
+
+    def _stoich(self):
+        elements = self._all_elements()
+        stoich_matrix = np.zeros((len(elements), len(self.reactions)))
+        reactant_matrix = stoich_matrix.copy()
+        product_matrix = stoich_matrix.copy()
+        for i, e in enumerate(elements):
+            for j, r in enumerate(self.reactions):
+                reactant_matrix[i,j] = r.reactants[e]
+                product_matrix[i,j] = r.products[e]
+                stoich_matrix[i,j] = r.products[e] - r.reactants[e]
+        self._reactant_matrix = np.array(reactant_matrix)
+        self._product_matrix = np.array(product_matrix)
+        self._elements = elements
+        return reactant_matrix, product_matrix, elements
+
+    @property
+    def R(self):
+        return self._reactant_matrix
+
+    @property
+    def P(self):
+        return self._product_matrix
+
+    @property
+    def N(self):
+        return self.P - self.R
+
+    @property
+    def E(self):
+        return list(self._elements)
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def init(self):
+        return self._init
+
+    def get(self, matrix, element):
+        index = self.E.index(element)
+        return matrix[index, 0]
+
+    def v(self, x):
+        vmatrix = np.zeros((len(self.reactions), 1))
+        for i, r in enumerate(self.reactions):
+            val = r.rate
+            for e in r.reactants:
+                val *= self.get(x, e)**r.reactants[e]
+            vmatrix[i, 0] = val
+        return vmatrix
 
     def initialize(self, init):
-        elements_array = [r.elements for r in self.reactions]
-        elements_array = list(set(itertools.chain(*elements_array)))
-        elements_array.sort()
-        self.elements = np.array(elements_array)
-        self.elements.setflags(write=False) # Read only
+        """
+        Initialize CRN with starting concentrations
 
-        init = defaultdict(float, init)
-        self.state = np.array([init[e] for e in self.elements])
-        self.init = self.state.copy()
-        self.init.setflags(write=False) # Read only
-        self.state.setflags(write=False) # Read only
-        reactant_matrix = []
-        product_matrix = []
-        for r in self.reactions:
-            reactant_array = []
-            product_array = []
-            for e in self.elements:
-                reactant_array.append(r.reactant_elements[e])
-                product_array.append(r.product_elements[e])
-            reactant_matrix.append(reactant_array)
-            product_matrix.append(product_array)
-        self.reactant_matrix = np.array(reactant_matrix)
-        self.product_matrix = np.array(product_matrix)
+        :param init: dictioanry of starting concentrations
+        :type init: dict
+        :return: None
+        :rtype: None
+        """
+        self._x = np.zeros((len(self.E), 1))
+        for k, v in init.items():
+            i = self.E.index(k)
+            self._x[i, 0] = v
+        self._init = self._x.copy()
 
     def get_rxn_flux_vector(self):
+        """
+        Returns the reaction flux vector
+
+        :return: reaction flux vector
+        :rtype: np.array
+        """
         rxn_flux = []
         for j, reaction in enumerate(self.reactions):
             rate = 1
@@ -69,8 +158,16 @@ class CRN:
                 rate = rate * self.state[i]**stoich_ele_i
             rxn_flux.append(rate*reaction.rate_constant)
         self.reaction_flux_vector = np.array(rxn_flux)
+        return self.reaction_flux_vector
 
     def apply_flux_vector(self, state):
+        """
+        Get the instantan
+        :param state:
+        :type state:
+        :return:
+        :rtype:
+        """
         rxn_flux = []
         for j, reaction in enumerate(self.reactions):
             rate = 1
@@ -82,28 +179,45 @@ class CRN:
 
     def dX(self):
         self.get_rxn_flux_vector()
-        return np.dot(self.reaction_flux_vector, self.product_matrix - self.reactant_matrix)
-
-    def _get_index(self, element):
-        return list(self.elements).index(element)
+        return np.dot(self.N, self.v(self.x))
 
     def run(self, dt, t_final, init=None):
         if init is None:
             init = self.init.copy()
 
         def func(y, t):
-            flux_vector = self.apply_flux_vector(y)
-            dx = np.dot(flux_vector, self.product_matrix - self.reactant_matrix)
-            return dx
+            return np.dot(self.N, self.v(y.reshape(len(y), 1))).flatten()
 
-        y0 = init
-        t = np.linspace(0,t_final,t_final/dt)
+        y0 = init.flatten()
+        t = np.linspace(0, t_final, t_final/dt)
         y = odeint(func, y0, t)
+
         y = pd.DataFrame(y)
         y.index = y.index * dt
-        y.columns = self.elements
+        y.columns = self._elements
         y.index.name = 'time'
         return y
+
+    # def _get_index(self, element):
+    #     return list(self.elements).index(element)
+    #
+    # def run(self, dt, t_final, init=None):
+    #     if init is None:
+    #         init = self.init.copy()
+    #
+    #     def func(y, t):
+    #         flux_vector = self.apply_flux_vector(y)
+    #         dx = np.dot(flux_vector, self.product_matrix - self.reactant_matrix)
+    #         return dx
+    #
+    #     y0 = init
+    #     t = np.linspace(0,t_final,t_final/dt)
+    #     y = odeint(func, y0, t)
+    #     y = pd.DataFrame(y)
+    #     y.index = y.index * dt
+    #     y.columns = self.elements
+    #     y.index.name = 'time'
+    #     return y
 
     def dose_response(self, element, values, dt, t_final):
         index = list(self.elements).index(element)
@@ -117,3 +231,4 @@ class CRN:
         array.index = values
         array.index.name = "{}_T".format(element)
         return array
+
