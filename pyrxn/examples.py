@@ -12,5 +12,5 @@ def three_ring():
     c.r("A > ", 0.1)
     c.r("B > ", 0.1)
     c.r("C > ", 0.1)
-    c.set_state({"PA": 1, "PB": 1, "PC": 1})
+    c.update_state({"PA": 1, "PB": 1, "PC": 1})
     return c

@@ -5,7 +5,8 @@ from distutils.core import setup
 
 tests_require = [
     'pytest',
-    'pytest-cov'
+    'pytest-cov',
+    'pytest-benchmark'
 ]
 
 install_requires = [
