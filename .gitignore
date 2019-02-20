@@ -810,3 +810,4 @@ local.properties
 .worksheet
 
 /.pytest_cache/
+/.benchmarks/
