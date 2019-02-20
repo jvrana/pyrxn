@@ -189,6 +189,43 @@ def test_merge():
     assert(c1['C'] == 0)
 
 
+def test_merge_maintains_part():
+    c = CRN()
+    c.r("A + B > 2C", 1, part='part1')
+
+    c2 = CRN()
+    c2.r("AB > BC", 1, part='part2')
+
+
+    c3 = CRN.merge_all([c, c2])
+    for r in c3.reactions:
+        print(r)
+    assert c3.reactions[0].part == 'part1'
+    assert c3.reactions[1].part == 'part2'
+
+    print(c3)
+
+
+def test_get_part():
+    c = CRN()
+    c.r("A + B > 2C", 1, part='part1')
+
+    c2 = CRN()
+    c2.r("AB <> BC", [1,1], part='part2')
+
+
+    c3 = CRN.merge_all([c, c2])
+
+    c4 = c3.get_part('part1')
+    c5 = c3.get_part('part2')
+    c6 = c3.get_part('part1', 'part2')
+
+    assert len(c3.reactions) == 3
+    assert len(c4.reactions) == 1
+    assert len(c5.reactions) == 2
+    assert len(c6.reactions) == 3
+
+
 def test_merge_with_add():
     c1 = CRN()
     c1.r("A + B <> 2C", [1, 1])

@@ -16,15 +16,16 @@ from copy import copy
 
 
 class Reaction:
-    def __init__(self, reactants: dict, products: dict, rate_constant: float, name=''):
+    def __init__(self, reactants: dict, products: dict, rate_constant: float, name='', part=''):
         """Construct a new reaction"""
         self._relements = reactants
         self._pelements = products
         self.rate = float(rate_constant)
         self.name = name
+        self.part = part
 
     @classmethod
-    def from_element_list(cls, reactants, products, rate_contant, name=''):
+    def from_element_list(cls, reactants, products, rate_contant, name='', part=''):
         """
         Construct reaction from a list of reactants and products.
 
@@ -47,10 +48,10 @@ class Reaction:
         for p in products:
             s, e = cls._convert_element(p)
             pcoeff[e] = s
-        return cls(rcoeff, pcoeff, rate_contant, name)
+        return cls(rcoeff, pcoeff, rate_contant, name, part)
 
     @classmethod
-    def from_string(cls, eqn, rate, name=''):
+    def from_string(cls, eqn, rate, name='', part=''):
         """
         Construct reactions from unidirectional or bidirectional reactions.
 
@@ -75,16 +76,16 @@ class Reaction:
             elif rate == 0:
                     raise CRNException("Rate cannot be zero.")
             if direction == ">":
-                reactions.append(cls.from_element_list(reactants, products, rate, name))
+                reactions.append(cls.from_element_list(reactants, products, rate, name, part))
             else:
-                reactions.append(cls.from_element_list(products, reactants, rate, name))
+                reactions.append(cls.from_element_list(products, reactants, rate, name, part))
         elif direction == "<>" or direction == "=":
             if not (isinstance(rate, list) or isinstance(rate, tuple)):
                 raise CRNException("Bidirectional reactions include a list or tuple of rates.")
             elif 0 in rate:
                 raise CRNException("Rate cannot be zero. {}".format(rate))
-            reactions.append(cls.from_element_list(reactants, products, rate[0], name+"_f"))
-            reactions.append(cls.from_element_list(products, reactants, rate[1], name+"_r"))
+            reactions.append(cls.from_element_list(reactants, products, rate[0], name+"_f", part))
+            reactions.append(cls.from_element_list(products, reactants, rate[1], name+"_r", part))
         else:
             raise CRNException("Direction {} not recognized".format(direction))
         return reactions
@@ -126,7 +127,6 @@ class Reaction:
 
     def copy(self, suffix=None):
         reaction = Reaction.__new__(Reaction)
-
         relements = defaultdict(int)
         pelements = defaultdict(int)
 
@@ -144,6 +144,9 @@ class Reaction:
         reaction._relements = relements
         reaction._pelements = pelements
         reaction.rate = self.rate
+
+        reaction.part = self.part
+
         name = self.name
         if suffix:
             name += "_" + str(suffix)
@@ -157,6 +160,9 @@ class Reaction:
         s = " + ".join(r) + " > " + " + ".join(p)
         return s
 
+    def __copy__(self):
+        return self.copy()
+
     def __eq__(self, other):
         return self.reactants == other.reactants and \
                self.products == other.products and \
@@ -166,7 +172,10 @@ class Reaction:
         return hash((self._to_str(), self.rate))
 
     def __str__(self):
-        return self._to_str()
+        return "<Reaction name='{}' part='{}' eqn='{}'>".format(
+            self.name,
+            self.part,
+            self._to_str())
 
     def __repr__(self):
         return self._to_str()
@@ -249,7 +258,7 @@ class CRN:
         self._update()
         return self
 
-    def r(self, eqn, rate, name=''):
+    def r(self, eqn, rate, name='', part=''):
         """
         Adds a new reaction from a string similar to the form `3A + 4B + 2D <> C`
 
@@ -260,7 +269,7 @@ class CRN:
         :return: None
         :rtype: None
         """
-        return self.add_reactions(Reaction.from_string(eqn, rate, name=name))
+        return self.add_reactions(Reaction.from_string(eqn, rate, name=name, part=part))
 
     def _update(self):
         """
@@ -487,11 +496,11 @@ class CRN:
         df['time'] = sol.t
         return df
 
-    def to_dataframe(self):
+    def to_df(self):
         d = []
         for r in self.reactions:
-            d.append([str(r), r.rate, r.name])
-        df = pd.DataFrame(d, columns=['reaction', 'rate', 'name'])
+            d.append([r._to_str(), r.rate, r.name, r.part])
+        df = pd.DataFrame(d, columns=['reaction', 'rate', 'name', 'part'])
         return df
 
     @classmethod
@@ -519,6 +528,14 @@ class CRN:
     def copy(self):
         c = self.__class__()
         c.merge(self)
+        return c
+
+    def get_part(self, name, *other_names):
+        assert isinstance(name, str)
+        names = [name] + list(other_names)
+        reactions = [r for r in self.reactions if r.part in names]
+        c = self.copy()
+        c.set_reactions(reactions, copy=True)
         return c
 
     def __copy__(self):
@@ -550,7 +567,7 @@ class CRN:
 
     def __str__(self):
         s = "Chemical Reaction Network:\n"
-        s += self.to_dataframe().to_string()
+        s += self.to_df().to_string()
         return s
 
     def __add__(self, other):
