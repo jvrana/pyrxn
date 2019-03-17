@@ -13,9 +13,11 @@ import re
 from scipy.integrate import solve_ivp
 from collections import defaultdict
 from copy import copy
+import pydash
 
+class Reaction(object):
+    """A chemical reaction"""
 
-class Reaction:
     def __init__(self, reactants: dict, products: dict, rate_constant: float, name='', part=''):
         """Construct a new reaction"""
         self._relements = reactants
@@ -180,7 +182,9 @@ class Reaction:
     def __repr__(self):
         return self._to_str()
 
-class CRN:
+class CRN(object):
+    """A Chemical Reaction Network"""
+
     def __init__(self, reactions=None, name=''):
         self._reactions = []
         self._reactant_matrix = np.array([])
@@ -193,8 +197,78 @@ class CRN:
                 self.r(r)
 
     @property
+    def parts(self):
+        """Return list of parts"""
+        parts = []
+        for r in self.reactions:
+            if r.part not in parts:
+                parts.append(r.part)
+        return parts
+
+    @property
     def reactions(self):
         return self._reactions[:]
+
+    def _collect(self, func, filter=None, reactions=None, unique=False, flatten=True):
+        if reactions is None:
+            reactions = self.reactions
+        if filter is not None:
+            reactions = [r for r in reactions if filter(r)]
+        collected = []
+        for r in reactions:
+            c = func(r)
+            collected.append(c)
+        if flatten:
+            collected = pydash.flatten(collected)
+        if unique:
+            collected = pydash.uniq(collected)
+        return collected
+
+    def reactions_by_part(self, parts=None):
+        """Return reactions from a list of parts or an instance of a part"""
+        fltr = None
+        if parts is not None:
+            fltr = lambda r: r in pydash.to_list(parts)
+        return self._collect(
+            lambda x: x,
+            filter=fltr, unique=False
+        )
+
+    def products(self, parts=None):
+        fltr = None
+        if parts is not None:
+            fltr = lambda r: r in pydash.to_list(parts)
+        return self._collect(
+            lambda x: list(x.products),
+            filter=fltr, unique=True
+        )
+
+    def reactants(self, parts=None):
+        fltr = None
+        if parts is not None:
+            fltr = lambda r: r in pydash.to_list(parts)
+        return self._collect(
+            lambda x: list(x.reactants),
+            filter=fltr, unique=True
+        )
+
+    def element_indices(self, elements):
+        edict = dict(zip(self.E, range(len(self.E))))
+        indices = [edict[e] for e in elements]
+        return indices
+
+    def element_mask(self, elements):
+        mask = np.zeros(len(self.E), np.dtype('int'))
+        mask[self.element_indices(elements)] = 1
+        return mask
+
+    def reactant_element_mask(self, part=None):
+        """Return reactant mask for elements array self.E"""
+        return self.element_mask(self.reactants(parts=part))
+
+    def reactant_element_mask(self, part=None):
+        """Return reactant mask for elements array self.E"""
+        return self.element_mask(self.products(parts=part))
 
     def _add_reaction(self, reaction):
         self._reactions.append(reaction)

@@ -10,7 +10,8 @@ pandas = "*"
 sympy = "*"
 seaborn = "*"
 quantities = "*"
-pyrxn = {editable = true, path = "."}
+pyrxn = {editable = true,path = "."}
+pydash = "*"
 
 [dev-packages]
 pytest = "*"
@@ -19,6 +20,3 @@ pygal = "*"
 pygaljs = "*"
 yapf = "*"
 pylint = "*"
-
-[requires]
-python_version = "3.6"
